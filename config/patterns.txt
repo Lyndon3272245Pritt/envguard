@@ -1,0 +1,39 @@
+# envguard - Secret Detection Patterns
+# Format: LABEL|REGEX_PATTERN
+# Each line defines a named pattern used to detect secrets in staged diffs.
+
+# Generic API Keys
+Generic API Key|['"]?[a-z0-9_\-]*api[_\-]?key['"]?\s*[:=]\s*['"]?[a-zA-Z0-9/+_\-]{16,}['"]?
+
+# AWS Credentials
+AWS Access Key ID|AKIA[0-9A-Z]{16}
+AWS Secret Access Key|aws_secret_access_key\s*=\s*[A-Za-z0-9/+=]{40}
+
+# Generic Passwords in assignments
+Hardcoded Password|['"]?password['"]?\s*[:=]\s*['"][^'"]{6,}['"]
+
+# Private Keys
+Private Key Header|-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----
+
+# Database Connection Strings
+Database URL|['"]?(postgres|mysql|mongodb|redis|jdbc):\/\/[^:]+:[^@]+@[^'"\s]+['"]?
+
+# GitHub / GitLab Tokens
+GitHub Token|gh[pousr]_[A-Za-z0-9_]{36,}
+GitLab Token|glpat-[A-Za-z0-9\-]{20,}
+
+# Slack Tokens
+Slack Token|xox[baprs]-[A-Za-z0-9\-]{10,}
+
+# Stripe Keys
+Stripe Secret Key|sk_live_[A-Za-z0-9]{24,}
+Stripe Publishable Key|pk_live_[A-Za-z0-9]{24,}
+
+# SendGrid API Key
+SendGrid API Key|SG\.[A-Za-z0-9\-_]{22,}\.[A-Za-z0-9\-_]{43,}
+
+# Generic Bearer Tokens
+Bearer Token|[Aa]uthorization:\s*[Bb]earer\s+[A-Za-z0-9\-_\.]{20,}
+
+# .env style assignments with non-empty values
+Dotenv Assignment|^\+[A-Z][A-Z0-9_]{2,}\s*=\s*.{6,}
