@@ -14,6 +14,12 @@ public class ScanResult {
     private final long scanDurationMs;
 
     public ScanResult(String filePath, List<ScanViolation> violations, long scanDurationMs) {
+        if (filePath == null || filePath.isBlank()) {
+            throw new IllegalArgumentException("filePath must not be null or blank");
+        }
+        if (violations == null) {
+            throw new IllegalArgumentException("violations must not be null");
+        }
         this.filePath = filePath;
         this.violations = Collections.unmodifiableList(new ArrayList<>(violations));
         this.scanDurationMs = scanDurationMs;
