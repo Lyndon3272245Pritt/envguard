@@ -70,4 +70,12 @@ class DirectoryScannerTest {
 
         assertEquals(2, results.size());
     }
+
+    @Test
+    void returnsEmptyListForEmptyDirectory() throws IOException {
+        // Ensure scanning a completely empty directory does not throw and returns no results
+        List<ScanResult> results = directoryScanner.scanDirectory(tempDir);
+
+        assertTrue(results.isEmpty(), "Empty directory should yield no scan results");
+    }
 }
