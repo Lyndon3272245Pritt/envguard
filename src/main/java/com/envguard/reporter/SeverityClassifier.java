@@ -5,63 +5,59 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * Classifies scan violations by severity level based on the matched pattern.
+ * Classifies scan violations into severity levels based on matched pattern names.
  */
 public class SeverityClassifier {
 
-    public enum Severity {
-        CRITICAL, HIGH, MEDIUM, LOW
-    }
-
-    private static final Map<Pattern, Severity> SEVERITY_RULES = new HashMap<>();
+    private static final Map<Pattern, ScanViolation.Severity> SEVERITY_RULES = new HashMap<>();
 
     static {
-        // Critical: private keys, tokens with high entropy patterns
-        SEVERITY_RULES.put(Pattern.compile("(?i)(private[_-]?key|rsa[_-]?private|pem)"), Severity.CRITICAL);
-        SEVERITY_RULES.put(Pattern.compile("(?i)(aws[_-]?secret|aws[_-]?access[_-]?key)"), Severity.CRITICAL);
-        SEVERITY_RULES.put(Pattern.compile("(?i)(github[_-]?token|gh[_-]?token)"), Severity.CRITICAL);
+        // CRITICAL: private keys, tokens with full access
+        SEVERITY_RULES.put(Pattern.compile("(?i)(private.?key|rsa|dsa|ecdsa|openssh)"), ScanViolation.Severity.CRITICAL);
+        SEVERITY_RULES.put(Pattern.compile("(?i)(aws.?secret|github.?token|stripe.?secret)"), ScanViolation.Severity.CRITICAL);
 
-        // High: passwords, API keys
-        SEVERITY_RULES.put(Pattern.compile("(?i)(password|passwd|api[_-]?key|api[_-]?secret)"), Severity.HIGH);
-        SEVERITY_RULES.put(Pattern.compile("(?i)(secret[_-]?key|auth[_-]?token|bearer)"), Severity.HIGH);
+        // HIGH: API keys, passwords, credentials
+        SEVERITY_RULES.put(Pattern.compile("(?i)(api.?key|password|passwd|secret|credential)"), ScanViolation.Severity.HIGH);
+        SEVERITY_RULES.put(Pattern.compile("(?i)(auth.?token|access.?token|bearer)"), ScanViolation.Severity.HIGH);
 
-        // Medium: credentials, connection strings
-        SEVERITY_RULES.put(Pattern.compile("(?i)(database[_-]?url|db[_-]?password|jdbc:)"), Severity.MEDIUM);
-        SEVERITY_RULES.put(Pattern.compile("(?i)(smtp[_-]?password|mail[_-]?password)"), Severity.MEDIUM);
+        // MEDIUM: connection strings, endpoints with embedded info
+        SEVERITY_RULES.put(Pattern.compile("(?i)(database.?url|connection.?string|jdbc)"), ScanViolation.Severity.MEDIUM);
+        SEVERITY_RULES.put(Pattern.compile("(?i)(smtp|ftp.?pass|mongo.?uri)"), ScanViolation.Severity.MEDIUM);
 
-        // Low: general env vars that may contain sensitive info
-        SEVERITY_RULES.put(Pattern.compile("(?i)(access[_-]?token|client[_-]?secret)"), Severity.LOW);
+        // LOW: generic env vars, usernames, non-sensitive keys
+        SEVERITY_RULES.put(Pattern.compile("(?i)(username|user.?name|app.?key|client.?id)"), ScanViolation.Severity.LOW);
     }
 
     /**
-     * Classifies the severity of a violation based on the matched line content.
+     * Classifies the severity of a violation based on its matched pattern name.
      *
-     * @param matchedLine the line that triggered the violation
-     * @param patternName the name of the pattern that matched
-     * @return the severity level
+     * @param patternName the name or label of the matched pattern
+     * @return the classified severity level
      */
-    public Severity classify(String matchedLine, String patternName) {
-        if (matchedLine == null || matchedLine.isEmpty()) {
-            return Severity.LOW;
+    public ScanViolation.Severity classify(String patternName) {
+        if (patternName == null || patternName.isBlank()) {
+            return ScanViolation.Severity.LOW;
         }
-        String combined = (patternName + " " + matchedLine).toLowerCase();
-        for (Map.Entry<Pattern, Severity> entry : SEVERITY_RULES.entrySet()) {
-            if (entry.getKey().matcher(combined).find()) {
+        for (Map.Entry<Pattern, ScanViolation.Severity> entry : SEVERITY_RULES.entrySet()) {
+            if (entry.getKey().matcher(patternName).find()) {
                 return entry.getValue();
             }
         }
-        return Severity.LOW;
+        return ScanViolation.Severity.LOW;
     }
 
     /**
-     * Returns a display label with ANSI color for terminal output.
+     * Annotates a violation with the appropriate severity level.
+     *
+     * @param violation the violation to annotate
+     * @return the same violation with severity set
      */
-    public String getColoredLabel(Severity severity) {
-        return switch (severity) {
-            case CRITICAL -> "\u001B[31m[CRITICAL]\u001B[0m";
-            case HIGH     -> "\u001B[33m[HIGH]\u001B[0m";
-            case MEDIUM   -> "\u001B[34m[MEDIUM]\u001B[0m";
-            case LOW      -> "\u001B[37m[LOW]\u001B[0m";
-        };
+    public ScanViolation annotate(ScanViolation violation) {
+        if (violation == null) {
+            throw new IllegalArgumentException("Violation must not be null");
+        }
+        ScanViolation.Severity severity = classify(violation.getPatternName());
+        violation.setSeverity(severity);
+        return violation;
     }
 }
