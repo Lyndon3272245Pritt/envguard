@@ -76,6 +76,17 @@ class ViolationExporterTest {
         Path out = tempDir.resolve("empty.json");
         exporter.export(List.of(), out, ViolationExporter.ExportFormat.JSON);
         String content = Files.readString(out).trim();
-        assertTrue(content.startsWith("[") && content.endsWith("]"));
+        assertEquals("[]", content);
+    }
+
+    @Test
+    void exportCsvFormat_emptyViolations_writesHeaderOnly() throws IOException {
+        Path out = tempDir.resolve("empty.csv");
+        exporter.export(List.of(), out, ViolationExporter.ExportFormat.CSV);
+        String content = Files.readString(out).trim();
+        // CSV export with no violations should still contain the header row
+        assertTrue(content.startsWith("file,line,pattern,severity"));
+        // Ensure no data rows are present beyond the header
+        assertEquals(1, content.lines().count());
     }
 }
