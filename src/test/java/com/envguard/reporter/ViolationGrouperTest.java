@@ -67,6 +67,12 @@ class ViolationGrouperTest {
     }
 
     @Test
+    void groupBySeverity_emptyList_returnsEmptyMap() {
+        Map<String, List<ScanViolation>> result = grouper.groupBySeverity(Collections.emptyList());
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void countAffectedFiles_returnsDistinctFileCount() {
         ScanViolation v1 = new ScanViolation(".env", 1, "A=1", "HIGH");
         ScanViolation v2 = new ScanViolation(".env", 2, "B=2", "HIGH");
@@ -79,5 +85,11 @@ class ViolationGrouperTest {
     @Test
     void countAffectedFiles_emptyList_returnsZero() {
         assertEquals(0, grouper.countAffectedFiles(Collections.emptyList()));
+    }
+
+    @Test
+    void countAffectedFiles_singleViolation_returnsOne() {
+        ScanViolation v = new ScanViolation(".env", 1, "SECRET=abc", "HIGH");
+        assertEquals(1, grouper.countAffectedFiles(Collections.singletonList(v)));
     }
 }
